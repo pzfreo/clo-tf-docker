@@ -7,6 +7,10 @@ variable "awsprops" {
     keyname = "pzf2"
   }
 }
+variable "student" {
+  type = string
+  default = "oxclo01"
+}
 
 provider "aws" {
   region = lookup(var.awsprops, "region")
@@ -30,8 +34,8 @@ data "aws_subnet_ids" "all" {
 module "dev_ssh_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
-  name        = "ec2_sg"
-  description = "Security group for ec2_sg"
+  name        = format("dev_ssh_sg_%s",var.student)
+  description = format("Security group for dev_ssh_sg %s", var.student)
   vpc_id      = data.aws_vpc.default.id
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
@@ -41,8 +45,8 @@ module "dev_ssh_sg" {
 module "ec2_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
-  name        = "ec2_sg"
-  description = "Security group for ec2_sg"
+  name        = format("ec2_sg_%s",var.student)
+  description = format("Security group for ec2_sg %s", var.student)
   vpc_id      = data.aws_vpc.default.id
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
@@ -69,7 +73,7 @@ data "aws_ami" "ubuntu" {
 
 
 resource "aws_iam_role" "ec2_role_clo_tfdc" {
-  name = "ec2_role_clo_tfdc"
+  name        = format("ec2_role_clo_tfdc_%s",var.student)
 
   assume_role_policy = <<EOF
 {
@@ -87,13 +91,11 @@ resource "aws_iam_role" "ec2_role_clo_tfdc" {
 }
 EOF
 
-  tags = {
-    project = "docker-compose"
-  }
+ 
 }
 
 resource "aws_iam_instance_profile" "ec2_profile_clo_tfdc" {
-  name = "ec2_profile_clo_tfdc"
+  name = format("ec2_role_clo_tfdc_%s",var.student) 
   role = aws_iam_role.ec2_role_clo_tfdc.name
 }
 
@@ -108,11 +110,6 @@ resource "aws_instance" "web" {
     volume_size = 8
   }
 
-  provisioner "file" {
-    source      = "./docker-compose.yaml"
-    destination = "/home/ubuntu/docker-compose.yaml"
-  }
-
   user_data = <<-EOF
     #!/bin/bash
     set -ex
@@ -120,8 +117,10 @@ resource "aws_instance" "web" {
     sudo apt install docker.io -y
     sudo service docker start
     sudo usermod -a -G docker ubuntu
-    sudo curl -L https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+    sudo apt install python3-pip -y
+    sudo pip3 install docker-compose
+    # sudo curl -L https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+    # sudo chmod +x /usr/local/bin/docker-compose
     git clone https://github.com/pzfreo/clo-tf-docker.git
     cd clo-tf-docker
     docker-compose up --build
@@ -135,9 +134,9 @@ resource "aws_instance" "web" {
   iam_instance_profile = aws_iam_instance_profile.ec2_profile_clo_tfdc.name
 
   tags = {
-    project = "clo-tfdc",
-    name = "oxcloXX-tf-dc"
+    Name = format("%s-tf",var.student)
   }
+
 
   monitoring              = true
   disable_api_termination = false
