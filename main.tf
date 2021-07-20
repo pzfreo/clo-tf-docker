@@ -3,7 +3,7 @@
 # Set your student id / AWS name here. It will be appended to all the resources that are createdo 
 variable "student" {
   type = string
-  default = "pzf2"
+  default = "oxclo01"
 }
 
 # Other properties can be set here
