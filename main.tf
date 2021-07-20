@@ -165,3 +165,10 @@ resource "aws_instance" "web" {
   ebs_optimized           = true
 }
 
+# print out the ip address of the server
+output "instance_public_ip" {
+  value       = {
+   public_ip = "${aws_instance.web.public_ip}"  
+  }
+  description = "The public IP address of the main server instance."
+}
