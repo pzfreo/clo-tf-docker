@@ -145,7 +145,7 @@ resource "aws_instance" "web" {
     git clone ${lookup(var.awsprops, "dc-repository")} dc
     cd dc
     docker-compose pull
-    docker-compose ups
+    docker-compose up
   EOF
 
 
